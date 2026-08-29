@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#090b0e">
+<title>Моя Сушка 4.0</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#090b0e;color:#f5f7fa;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+.app{max-width:720px;margin:auto;padding:18px 14px 100px}h1{margin:0;font-size:29px}h2{margin:0 0 14px}h3{margin:0 0 10px}
+.muted{color:#89929d;font-size:13px}.card{background:#14181d;border:1px solid #252b33;border-radius:18px;padding:16px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{background:#1b2026;border-radius:14px;padding:13px}.num{font-size:24px;font-weight:850}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}.field{margin-bottom:10px}label{color:#89929d;font-size:12px}
+input,select{width:100%;padding:12px;margin-top:5px;background:#1b2026;color:white;border:1px solid #303740;border-radius:11px;outline:none}
+button{border:0;padding:11px 14px;border-radius:11px;background:#63e6a3;color:#06120c;font-weight:750;cursor:pointer}
+button.secondary{background:#1b2026;color:white;border:1px solid #303740}button.delete{background:#3a2024;color:#ff9a9a}button.full{width:100%;margin-top:4px}
+.screen{display:none}.screen.active{display:block}.progress{height:8px;background:#292f37;border-radius:20px;overflow:hidden;margin-top:8px}.progress>div{height:100%;background:#63e6a3;border-radius:20px}
+.macro{display:flex;justify-content:space-between;gap:8px;margin-top:12px;font-size:13px}.item{padding:11px 0;border-bottom:1px solid #292f37}.item:last-child{border-bottom:0}
+.empty{text-align:center;color:#707985;padding:15px}.food-result,.recipe{padding:12px;background:#1b2026;border-radius:12px;margin-top:7px}
+.food-result{cursor:pointer}.kpi{font-size:34px;font-weight:900}.good{color:#76eab0}.warning{color:#ffd166}.danger{color:#ff9a9a}
+.chart{height:180px;display:flex;align-items:flex-end;gap:4px;border-bottom:1px solid #343a42;padding:8px 3px 0}.bar{flex:1;background:#63e6a3;border-radius:4px 4px 0 0;min-width:4px}
+.nav{position:fixed;z-index:20;bottom:0;left:0;right:0;background:#101318;border-top:1px solid #272d35;padding-bottom:env(safe-area-inset-bottom)}
+.navin{max-width:720px;margin:auto;display:flex;justify-content:space-around}.nav button{background:transparent;color:#89929d;border-radius:0;padding:10px 5px;font-size:11px}.nav button.active{color:#63e6a3}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:50;padding:16px;overflow:auto}.modal-box{max-width:620px;margin:35px auto;background:#14181d;border:1px solid #303740;border-radius:18px;padding:18px}.close{float:right;background:#3a2024;color:#ff9a9a}
+.tabs{display:flex;gap:7px;overflow:auto;margin-bottom:10px}.tabs button{white-space:nowrap}.tabs button.active{background:#63e6a3;color:#06120c}
+.timer{font-size:52px;text-align:center;font-weight:900;margin:12px}.pill{display:inline-block;padding:5px 8px;background:#1b3328;color:#76eab0;border-radius:8px;font-size:11px}
+.small{font-size:12px}.two{display:flex;gap:8px}.two>*{flex:1}
+</style>
+</head>
+<body>
+<div class="app">
+<header><h1>Моя Сушка 🔥</h1><div class="muted">V4.0 • питание • зал • прогресс • аналитика</div></header>
+
+<section id="home" class="screen active">
+<div class="grid">
+<div class="stat"><div class="muted">Вес</div><div class="num" id="hWeight"></div><div class="muted">цель <span id="hTarget"></span> кг</div></div>
+<div class="stat"><div class="muted">Калории</div><div class="num" id="hCal"></div><div class="muted">из <span id="hCalGoal"></span></div></div>
+<div class="stat"><div class="muted">Белок</div><div class="num" id="hP"></div><div class="muted">цель <span id="hPG"></span> г</div></div>
+<div class="stat"><div class="muted">Шаги</div><div class="num" id="hSteps"></div><div class="muted">цель <span id="hSG"></span></div></div>
+</div>
+<div class="card"><h3>🎯 Цель сушки</h3><div id="goalText"></div><div class="progress"><div id="goalBar"></div></div></div>
+<div class="card"><h3>🍽️ Сегодня</h3><div class="macro"><b>Б <span id="hB">0</span></b><b>Ж <span id="hF">0</span></b><b>У <span id="hC">0</span></b></div><div class="progress"><div id="calBar"></div></div></div>
+<div class="card"><h3>🤖 Анализ</h3><div id="analysis"></div></div>
+<div class="card"><div class="row"><div><h3>🚶 Шаги</h3><div class="muted">Сегодня: <span id="stepText"></span></div></div><button onclick="addSteps()">+ шаги</button></div></div>
+</section>
+
+<section id="food" class="screen">
+<h2>🍗 Питание</h2>
+<div class="tabs">
+<button class="active" onclick="foodTab('today',this)">Сегодня</button><button onclick="foodTab('history',this)">История</button>
+</div>
+<div id="foodToday">
+<div class="card"><h3>🔎 Продукт</h3><input id="search" placeholder="Курица, рис, творог..." oninput="searchFood()"><div id="results"></div><button class="secondary full" onclick="customFood()">+ Свой продукт</button></div>
+<div class="card"><div class="row"><h3>Сегодня</h3><button class="secondary" onclick="clearToday()">Очистить</button></div><div id="todayList"></div><div class="macro"><b id="fCal"></b><b id="fP"></b><b id="fF"></b><b id="fC"></b></div></div>
+<div class="card"><h3>🥘 Мои блюда</h3><div id="recipes"></div><button class="secondary full" onclick="newRecipe()">+ Создать блюдо</button></div>
+</div>
+<div id="foodHistory" style="display:none"></div>
+</section>
+
+<section id="workout" class="screen">
+<h2>🏋️ Тренировки</h2>
+<div class="card"><h3>Добавить подход</h3><div class="field"><label>Тренировка</label><select id="wType"><option>Грудь + трицепс</option><option>Спина + бицепс</option><option>Ноги</option><option>Плечи</option><option>Полное тело</option><option>Кардио</option></select></div>
+<div class="field"><label>Упражнение</label><input id="ex" oninput="prevEx()" placeholder="Жим лёжа"></div>
+<div class="grid"><div class="field"><label>Вес, кг</label><input id="ew" type="number" step=".5"></div><div class="field"><label>Повторы</label><input id="er" type="number"></div></div>
+<div class="field"><label>Заметка</label><input id="en" placeholder="RIR 1-2"></div><div class="muted">Прошлый результат: <b id="prev">—</b></div><button class="full" onclick="addWorkout()">Сохранить подход</button></div>
+<div class="card"><div class="row"><h3>Сегодня</h3><button class="secondary" onclick="startRest(90)">⏱️ 1:30</button></div><div id="workoutList"></div></div>
+<div class="card"><h3>🏆 Рекорды</h3><div id="records"></div></div>
+<div class="card"><h3>⏱️ Таймер отдыха</h3><div class="timer" id="timer">01:30</div><div class="two"><button onclick="startRest(60)">1:00</button><button onclick="startRest(90)">1:30</button><button onclick="startRest(120)">2:00</button></div></div>
+</section>
+
+<section id="progress" class="screen">
+<h2>📈 Прогресс</h2>
+<div class="card"><h3>Новое измерение</h3><div class="grid"><div class="field"><label>Вес</label><input id="pw" type="number" step=".1"></div><div class="field"><label>Талия, см</label><input id="pwa" type="number" step=".1"></div></div><div class="field"><label>% жира</label><input id="pbf" type="number" step=".1"></div><button class="full" onclick="saveProgress()">Сохранить</button></div>
+<div class="card"><h3>⚖️ Вес</h3><div class="kpi" id="curW"></div><div class="muted" id="changeW"></div><div class="chart" id="chart"></div></div>
+<div class="card"><h3>📊 Статистика</h3><div id="stats"></div></div>
+<div class="card"><h3>История</h3><div id="history"></div></div>
+</section>
+
+<section id="profile" class="screen">
+<h2>⚙️ Профиль</h2>
+<div class="card"><div class="grid"><div class="field"><label>Имя</label><input id="pn"></div><div class="field"><label>Возраст</label><input id="pa" type="number"></div><div class="field"><label>Рост</label><input id="ph" type="number"></div><div class="field"><label>Вес</label><input id="pweight" type="number" step=".1"></div><div class="field"><label>Цель, кг</label><input id="ptarget" type="number" step=".1"></div></div><h3>🎯 Цели питания</h3><div class="grid"><div class="field"><label>Ккал</label><input id="pc" type="number"></div><div class="field"><label>Белок, г</label><input id="pp" type="number"></div><div class="field"><label>Жиры, г</label><input id="pf" type="number"></div><div class="field"><label>Углеводы, г</label><input id="pca" type="number"></div><div class="field"><label>Шаги</label><input id="ps" type="number"></div></div><button class="full" onclick="saveProfile()">Сохранить</button></div>
+<div class="card"><h3>🧮 Калькулятор</h3><button class="secondary" onclick="calc()">Рассчитать ориентир</button><div id="calcOut" style="margin-top:10px"></div></div>
+<div class="card"><h3>💾 Данные</h3><button class="secondary" onclick="exportData()">Экспорт</button> <button class="secondary" onclick="importData()">Импорт</button> <button class="delete" onclick="resetAll()">Удалить всё</button></div>
+</section>
+</div>
+
+<div class="nav"><div class="navin">
+<button class="active" onclick="show('home',this)">🏠<br>Главная</button><button onclick="show('food',this)">🍗<br>Питание</button><button onclick="show('workout',this)">🏋️<br>Зал</button><button onclick="show('progress',this)">📈<br>Прогресс</button><button onclick="show('profile',this)">⚙️<br>Профиль</button>
+</div></div>
+
+<div id="modal" class="modal"><div class="modal-box"><button class="close" onclick="closeModal()">×</button><div id="modalBody"></div></div></div>
+
+<script>
+const BASE=[
+["Куриная грудка","Мясо",110,23,1.9,0],["Индейка","Мясо",114,23,2,0],["Говядина вырезка","Мясо",158,22,7,0],["Говядина постная","Мясо",170,21,9,0],
+["Лосось","Рыба",208,20,13,0],["Тунец","Рыба",132,29,1,0],["Хек","Рыба",86,16,2,0],["Минтай","Рыба",72,16,.9,0],["Треска","Рыба",82,18,.7,0],
+["Творог 5%","Молочные",121,17,5,1.8],["Творог 0%","Молочные",71,16,.2,1.8],["Греческий йогурт","Молочные",73,10,2,3.5],["Творожный сыр","Молочные",230,6,22,4],
+["Яичный белок","Яйца",52,11,.2,.7],["Яйцо целое","Яйца",143,13,10,1],["Рис сухой","Крупы",344,6.7,.7,78],["Рис варёный","Крупы",130,2.7,.3,28],
+["Гречка сухая","Крупы",343,13,3.4,71],["Гречка варёная","Крупы",110,4.2,1.1,21],["Овсянка сухая","Крупы",366,12,6,61],
+["Картофель варёный","Овощи",82,2,.4,16.7],["Помидор","Овощи",18,.9,.2,3.9],["Огурец","Овощи",15,.8,.1,2.8],["Брокколи","Овощи",34,2.8,.4,6.6],
+["Банан","Фрукты",89,1.1,.3,23],["Яблоко","Фрукты",52,.3,.2,14],["Авокадо","Прочее",160,2,15,9],["Оливковое масло","Прочее",884,0,100,0],["Протеин","Прочее",400,80,6,8]
+].map(x=>({name:x[0],cat:x[1],cal:x[2],p:x[3],f:x[4],c:x[5]}));
+
+const KEY="MOYA_SUSHKA_V4";
+let data=JSON.parse(localStorage.getItem(KEY)||"null")||{
+profile:{name:"",age:25,height:179,weight:84,target:77,calories:2000,protein:180,fat:55,carbs:190,steps:10000},
+foods:[],custom:[],recipes:[],workouts:[],progress:[],steps:{}
+};
+function save(){localStorage.setItem(KEY,JSON.stringify(data));render()}
+function day(d=new Date()){return d.toLocaleDateString("ru-RU")}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+function products(){return [...BASE,...data.custom]}
+function show(id,b){document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));document.getElementById(id).classList.add("active");document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active"));b.classList.add("active");render()}
+function openModal(x){document.getElementById("modalBody").innerHTML=x;document.getElementById("modal").style.display="block"}
+function closeModal(){document.getElementById("modal").style.display="none"}
+
+function totals(date=day()){return data.foods.filter(x=>x.date===date).reduce((a,x)=>{a.cal+=x.cal;a.p+=x.p;a.f+=x.f;a.c+=x.c;return a},{cal:0,p:0,f:0,c:0})}
+
+function searchFood(){
+let q=document.getElementById("search").value.toLowerCase().trim(),r=document.getElementById("results");if(!q){r.innerHTML="";return}
+let a=products().filter(x=>x.name.toLowerCase().includes(q)).slice(0,12);
+r.innerHTML=a.map(p=>`<div class="food-result" onclick='chooseFood(${JSON.stringify(p).replace(/'/g,"&#39;")})'><b>${esc(p.name)}</b><div class="muted">${p.cat} • ${p.cal} ккал • Б ${p.p} • Ж ${p.f} • У ${p.c} / 100 г</div></div>`).join("")||`<div class="empty">Не найдено</div>`
+}
+function chooseFood(p){openModal(`<h2>🍗 ${esc(p.name)}</h2><div class="muted">${p.cal} ккал • Б ${p.p} • Ж ${p.f} • У ${p.c} на 100 г</div><div class="field" style="margin-top:14px"><label>Грамм</label><input id="grams" type="number" value="100"></div><div class="field"><label>Приём пищи</label><select id="meal"><option>Завтрак</option><option>Обед</option><option>Ужин</option><option>Перекус</option></select></div><button class="full" onclick='addFood(${JSON.stringify(p)})'>Добавить</button>`)}
+function addFood(p){let g=+document.getElementById("grams").value;if(!g)return;let q=g/100;data.foods.push({name:p.name,grams:g,meal:document.getElementById("meal").value,cal:p.cal*q,p:p.p*q,f:p.f*q,c:p.c*q,date:day(),time:Date.now()});closeModal();save()}
+function customFood(){openModal(`<h2>➕ Свой продукт</h2><div class="field"><label>Название</label><input id="cn"></div><div class="grid"><div class="field"><label>Ккал / 100 г</label><input id="cc" type="number"></div><div class="field"><label>Белок</label><input id="cp" type="number" step=".1"></div><div class="field"><label>Жиры</label><input id="cf" type="number" step=".1"></div><div class="field"><label>Углеводы</label><input id="cuc" type="number" step=".1"></div></div><button class="full" onclick="saveCustom()">Сохранить</button>`)}
+function saveCustom(){let p={name:document.getElementById("cn").value,cat:"Мои продукты",cal:+document.getElementById("cc").value||0,p:+document.getElementById("cp").value||0,f:+document.getElementById("cf").value||0,c:+document.getElementById("cuc").value||0};if(!p.name)return alert("Укажи название");data.custom.push(p);closeModal();save()}
+function delFood(i){data.foods.splice(i,1);save()}
+function clearToday(){if(confirm("Очистить питание за сегодня?")){data.foods=data.foods.filter(x=>x.date!==day());save()}}
+function newRecipe(){openModal(`<h2>🥘 Новое блюдо</h2><div class="field"><label>Название</label><input id="rn"></div><div class="grid"><div class="field"><label>Ккал всего</label><input id="rc" type="number"></div><div class="field"><label>Белок</label><input id="rp" type="number"></div><div class="field"><label>Жиры</label><input id="rf" type="number"></div><div class="field"><label>Углеводы</label><input id="ruc" type="number"></div><div class="field"><label>Вес блюда, г</label><input id="rw" type="number"></div></div><button class="full" onclick="saveRecipe()">Создать</button>`)}
+function saveRecipe(){let r={name:document.getElementById("rn").value,cal:+document.getElementById("rc").value||0,p:+document.getElementById("rp").value||0,f:+document.getElementById("rf").value||0,c:+document.getElementById("ruc").value||0,w:+document.getElementById("rw").value||1};if(!r.name)return alert("Укажи название");data.recipes.push(r);closeModal();save()}
+function addRecipe(i){let r=data.recipes[i];openModal(`<h2>🥘 ${esc(r.name)}</h2><div class="muted">${Math.round(r.cal)} ккал • Б ${Math.round(r.p)} • Ж ${Math.round(r.f)} • У ${Math.round(r.c)} на всё блюдо</div><div class="field" style="margin-top:14px"><label>Грамм</label><input id="rg" type="number" value="100"></div><button class="full" onclick="recipeToFood(${i})">Добавить</button>`)}
+function recipeToFood(i){let r=data.recipes[i],g=+document.getElementById("rg").value;if(!g)return;let q=g/r.w;data.foods.push({name:r.name,grams:g,meal:"Перекус",cal:r.cal*q,p:r.p*q,f:r.f*q,c:r.c*q,date:day(),time:Date.now()});closeModal();save()}
+
+function foodTab(t,b){document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById("foodToday").style.display=t==="today"?"block":"none";document.getElementById("foodHistory").style.display=t==="history"?"block":"none";if(t==="history")renderHistoryFood()}
+
+function renderHistoryFood(){
+let el=document.getElementById("foodHistory"),dates=[...new Set(data.foods.map(x=>x.date))].reverse();el.innerHTML=dates.length?dates.map(d=>{let t=totals(d);return `<div class="card"><div class="row"><b>${d}</b><span class="pill">${Math.round(t.cal)} ккал</span></div><div class="muted">Б ${Math.round(t.p)} г • Ж ${Math.round(t.f)} г • У ${Math.round(t.c)} г</div>${data.foods.filter(x=>x.date===d).map(x=>`<div class="item">${esc(x.name)} — ${x.grams} г</div>`).join("")}</div>`}).join(""):`<div class="card empty">Истории пока нет.</div>`
+}
+
+function prevEx(){let n=document.getElementById("ex").value.toLowerCase();let a=data.workouts.filter(x=>x.exercise.toLowerCase()===n).sort((a,b)=>b.time-a.time);document.getElementById("prev").textContent=a.length?`${a[0].weight} кг × ${a[0].reps}`:"—"}
+function addWorkout(){let e=document.getElementById("ex").value.trim(),w=+document.getElementById("ew").value,r=+document.getElementById("er").value;if(!e||!w||!r)return alert("Заполни упражнение, вес и повторения");data.workouts.push({type:document.getElementById("wType").value,exercise:e,weight:w,reps:r,volume:w*r,note:document.getElementById("en").value,date:day(),time:Date.now()});["ex","ew","er","en"].forEach(id=>document.getElementById(id).value="");startRest(90);save()}
+function startRest(sec){clearInterval(window.timerId);let left=sec;function tick(){let m=Math.floor(left/60),s=left%60;document.getElementById("timer").textContent=`${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;if(left<=0){clearInterval(window.timerId);navigator.vibrate&&navigator.vibrate([300,100,300]);alert("Отдых закончен 💪");return}left--}tick();window.timerId=setInterval(tick,1000)}
+function delWorkout(i){data.workouts.splice(i,1);save()}
+
+function addSteps(){let n=prompt("Сколько шагов добавить?","1000");if(n&&+n>0){data.steps[day()]=(data.steps[day()]||0)+(+n);save()}}
+
+function saveProgress(){let w=+document.getElementById("pw").value;if(!w)return alert("Укажи вес");data.progress.push({date:day(),weight:w,waist:+document.getElementById("pwa").value||null,bf:+document.getElementById("pbf").value||null,time:Date.now()});data.profile.weight=w;["pw","pwa","pbf"].forEach(id=>document.getElementById(id).value="");save()}
+function saveProfile(){let q=id=>document.getElementById(id).value;data.profile={name:q("pn"),age:+q("pa")||25,height:+q("ph")||179,weight:+q("pweight")||84,target:+q("ptarget")||77,calories:+q("pc")||2000,protein:+q("pp")||180,fat:+q("pf")||55,carbs:+q("pca")||190,steps:+q("ps")||10000};save();alert("Профиль сохранён")}
+function calc(){let p=data.profile,bmr=10*p.weight+6.25*p.height-5*p.age+5,t=bmr*1.45,cut=Math.round(t-500);document.getElementById("calcOut").innerHTML=`Базовый обмен: <b>${Math.round(bmr)} ккал</b><br>Ориентировочный расход: <b>${Math.round(t)} ккал</b><br>Дефицит ~500: <b class="good">${cut} ккал</b><div class="muted" style="margin-top:8px">Стартовая оценка. Корректируй по динамике веса.</div>`}
+
+function exportData(){let blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="moja-sushka-v4-backup.json";a.click()}
+function importData(){let i=document.createElement("input");i.type="file";i.accept=".json";i.onchange=e=>{let r=new FileReader();r.onload=()=>{try{data=JSON.parse(r.result);save();alert("Импорт готов")}catch{alert("Ошибка файла")}};r.readAsText(e.target.files[0])};i.click()}
+function resetAll(){if(confirm("Удалить все данные?")){localStorage.removeItem(KEY);location.reload()}}
+
+function render(){
+let p=data.profile,t=totals(),s=data.steps[day()]||0;
+document.getElementById("hWeight").textContent=p.weight+" кг";document.getElementById("hTarget").textContent=p.target;document.getElementById("hCal").textContent=Math.round(t.cal);document.getElementById("hCalGoal").textContent=p.calories;document.getElementById("hP").textContent=Math.round(t.p)+" г";document.getElementById("hPG").textContent=p.protein;document.getElementById("hSteps").textContent=s.toLocaleString("ru-RU");document.getElementById("hSG").textContent=p.steps;document.getElementById("stepText").textContent=s.toLocaleString("ru-RU");
+document.getElementById("hB").textContent=Math.round(t.p);document.getElementById("hF").textContent=Math.round(t.f);document.getElementById("hC").textContent=Math.round(t.c);document.getElementById("calBar").style.width=Math.min(100,t.cal/p.calories*100)+"%";
+let start=data.progress.length?data.progress[0].weight:84,lost=Math.max(0,start-p.weight),total=Math.max(.1,start-p.target),pct=Math.min(100,lost/total*100);document.getElementById("goalBar").style.width=pct+"%";document.getElementById("goalText").innerHTML=`<div class="row"><span>Сейчас <b>${p.weight} кг</b></span><span>Цель <b>${p.target} кг</b></span></div><div class="muted" style="margin-top:8px">Осталось ${Math.max(0,p.weight-p.target).toFixed(1)} кг</div>`;
+let a="";a+=t.cal>p.calories?`<div class="danger">⚠️ Калории выше цели.</div>`:`<div class="good">✅ Калории в пределах цели.</div>`;a+=t.p<p.protein*.8?`<div class="warning">🥩 Белка мало. Осталось ~${Math.max(0,Math.round(p.protein-t.p))} г.</div>`:`<div class="good">💪 Белка достаточно.</div>`;a+=s<p.steps*.7?`<div class="warning">🚶 Можно добавить шагов.</div>`:`<div class="good">🚶 Активность хорошая.</div>`;document.getElementById("analysis").innerHTML=a;
+
+let foods=data.foods.filter(x=>x.date===day()),meals=["Завтрак","Обед","Ужин","Перекус"];document.getElementById("todayList").innerHTML=foods.length?meals.map(m=>{let ar=foods.filter(x=>x.meal===m);return ar.length?`<h3 style="margin-top:13px">${m}</h3>`+ar.map(x=>`<div class="item"><div class="row"><div><b>${esc(x.name)}</b><div class="muted">${x.grams} г • ${Math.round(x.cal)} ккал • Б ${Math.round(x.p)} • Ж ${Math.round(x.f)} • У ${Math.round(x.c)}</div></div><button class="delete" onclick="delFood(${data.foods.indexOf(x)})">×</button></div></div>`).join(""):""}).join(""):`<div class="empty">Сегодня ещё ничего не добавлено.</div>`;
+document.getElementById("fCal").textContent=Math.round(t.cal)+" ккал";document.getElementById("fP").textContent="Б "+Math.round(t.p);document.getElementById("fF").textContent="Ж "+Math.round(t.f);document.getElementById("fC").textContent="У "+Math.round(t.c);
+document.getElementById("recipes").innerHTML=data.recipes.length?data.recipes.map((r,i)=>`<div class="recipe"><div class="row"><div><b>${esc(r.name)}</b><div class="muted">${Math.round(r.cal)} ккал • Б ${Math.round(r.p)} • Ж ${Math.round(r.f)} • У ${Math.round(r.c)}</div></div><button onclick="addRecipe(${i})">Добавить</button></div></div>`).join(""):`<div class="empty">Создай своё блюдо.</div>`;
+
+let ws=data.workouts.filter(x=>x.date===day());document.getElementById("workoutList").innerHTML=ws.length?ws.map(x=>`<div class="item"><div class="row"><div><b>${esc(x.exercise)}</b><div class="muted">${x.type} • ${x.weight} кг × ${x.reps} • объём ${x.volume} кг</div></div><button class="delete" onclick="delWorkout(${data.workouts.indexOf(x)})">×</button></div></div>`).join(""):`<div class="empty">Сегодня ещё нет подходов.</div>`;
+let rec={};data.workouts.forEach(x=>{if(!rec[x.exercise]||x.weight>rec[x.exercise].weight)rec[x.exercise]=x});document.getElementById("records").innerHTML=Object.keys(rec).length?Object.entries(rec).map(([n,x])=>`<div class="item"><b>${esc(n)}</b><div class="muted">${x.weight} кг × ${x.reps}</div></div>`).join(""):`<div class="empty">Рекордов пока нет.</div>`;
+
+let pr=[...data.progress].sort((a,b)=>a.time-b.time),vals=pr.slice(-20).map(x=>x.weight);document.getElementById("curW").textContent=p.weight+" кг";document.getElementById("changeW").textContent=pr.length>1?`Изменение от первого измерения: ${(p.weight-pr[0].weight).toFixed(1)} кг`:"Добавь ещё измерения для динамики";let max=vals.length?Math.max(...vals):1,min=vals.length?Math.min(...vals):0,range=Math.max(.1,max-min);document.getElementById("chart").innerHTML=vals.length?vals.map(v=>`<div class="bar" title="${v} кг" style="height:${30+(v-min)/range*120}px"></div>`).join(""):`<div class="empty" style="width:100%">Нет данных</div>`;
+let last7=pr.slice(-7),avg=last7.length?last7.reduce((a,x)=>a+x.weight,0)/last7.length:0;document.getElementById("stats").innerHTML=`Измерений: <b>${pr.length}</b><br>Средний вес последних ${last7.length} измерений: <b>${avg?avg.toFixed(1):"—"} кг</b><br>Сегодня: <b>${Math.round(t.cal)} ккал</b> • Б <b>${Math.round(t.p)} г</b>`;
+document.getElementById("history").innerHTML=pr.length?[...pr].reverse().map(x=>`<div class="item"><b>${x.date}</b><div class="muted">Вес ${x.weight} кг${x.waist?" • Талия "+x.waist+" см":""}${x.bf?" • Жир "+x.bf+"%":""}</div></div>`).join(""):`<div class="empty">История пуста.</div>`;
+
+let ids=["pn","pa","ph","pweight","ptarget","pc","pp","pf","pca","ps"],vals2=[p.name,p.age,p.height,p.weight,p.target,p.calories,p.protein,p.fat,p.carbs,p.steps];ids.forEach((id,i)=>document.getElementById(id).value=vals2[i]);
+}
+render();
+</script>
+</body>
+</html>
